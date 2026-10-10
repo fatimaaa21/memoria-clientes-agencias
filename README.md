@@ -2,7 +2,44 @@
 
 Base de datos y permisos del producto descrito en el *Documento de producto v0.2*: un expediente por cliente con acuerdos, consideraciones y pendientes, para agencias de marketing de 10 a 15 personas en México.
 
-**Estado: sprint 1. Solo base de datos y permisos.** Todavía no hay interfaz ni IA.
+**Estado: sprint 2.** Base de datos, permisos e interfaz web (login, clientes, expediente, registro rápido, por confirmar y equipo). Todavía sin IA.
+
+## Cómo correrlo
+
+```bash
+npm install
+cp .env.example .env.local      # ya trae la URL y la clave pública del proyecto
+npm run dev                     # con Supabase real → http://localhost:3000
+npm run dev:demo                # modo demo con datos de ejemplo, sin cuentas
+```
+
+En el **modo demo** la barra lateral tiene un selector "Ver como" para recorrer la app con cada rol (administrador, ejecutivo, colaborador, externo). Los cambios viven mientras el servidor esté encendido. Sirve para probar y para mostrarlo a agencias.
+
+### Antes del piloto con Supabase real
+
+1. En Supabase → Authentication → URL Configuration, agrega la URL donde publiques la app (además de `http://localhost:3000`) a **Site URL** y **Redirect URLs**.
+2. Configura un **SMTP propio** (por ejemplo Resend) en Authentication → Emails. El correo incluido en Supabase solo permite unos cuantos envíos por hora y los enlaces mágicos dejarán de llegar.
+3. Para invitar a alguien: el admin lo registra en **Equipo** y le comparte el enlace de la app. Al entrar con ese correo, la invitación se acepta sola.
+
+## Pantallas
+
+| Ruta | Qué hace |
+| --- | --- |
+| `/login` | Entrar con enlace por correo o con contraseña. |
+| `/bienvenida` | Primera vez: acepta invitaciones pendientes o crea la agencia. |
+| `/clientes` | Lista de clientes visibles; nuevo cliente en panel lateral. |
+| `/clientes/[id]` | Expediente: consideraciones vigentes arriba, línea de tiempo filtrable, registro rápido, detalle con confirmar/editar/historial y equipo del cliente. |
+| `/por-confirmar` | Cola del ejecutivo: todo lo que debe validar de sus clientes, con confirmación en lote. |
+| `/equipo` | Personas y roles; el admin invita y quita o devuelve el acceso. |
+
+## Sistema de diseño
+
+Minimalista tipo documento, definido en `app/globals.css` con variables CSS (modo claro y oscuro automático).
+
+- **Color solo con significado:** azul = acuerdo, ámbar = consideración, violeta = pendiente.
+- **Estado por forma, no solo por color:** marca llena = confirmado; anillo punteado = por confirmar.
+- **Paneles laterales** para acciones cortas; páginas completas para leer (el expediente).
+- Tipografía: Instrument Sans (incluida en el paquete, sin depender de Google Fonts).
 
 ## Qué incluye
 
@@ -10,7 +47,10 @@ Base de datos y permisos del producto descrito en el *Documento de producto v0.2
 | --- | --- |
 | `supabase/migrations/` | Esquema, funciones de permisos, triggers y políticas RLS. Ya aplicadas en el proyecto de Supabase `memoria-clientes-agencias` (`hmtjxixoqwxvxuuegzyp`). |
 | `supabase/tests/permisos_test.sql` | 37 pruebas que verifican la matriz de permisos con usuarios simulados. |
-| `types/database.types.ts` | Tipos de TypeScript generados desde la base, listos para Next.js. |
+| `types/database.types.ts` | Tipos de TypeScript generados desde la base. |
+| `app/`, `components/` | Interfaz en Next.js 15 (App Router, Server Actions). |
+| `lib/data/` | Acceso a datos: `supabase.ts` (real) y `demo.ts` (datos de ejemplo en memoria). |
+| `lib/permissions.ts` | Qué botones mostrar según el rol. La seguridad real está en la base. |
 
 ## Modelo de datos
 
@@ -59,7 +99,7 @@ Corre las pruebas cada vez que cambies una política o un trigger.
 
 ## Pendiente para los siguientes sprints
 
-- **Sprint 2:** proyecto Next.js con login, alta de agencia, invitaciones, registro rápido y expediente por cliente.
 - **Sprint 3:** subir documentos y generar la minuta con IA (Storage + extracción).
 - Tarea programada que elimine definitivamente lo marcado como eliminado hace más de 30 días.
-- Correo de invitación (hoy la invitación se guarda, pero no se envía).
+- Correo de invitación automático (hoy se guarda la invitación y el admin comparte el enlace).
+- Vista de bitácora para el admin y restaurar registros eliminados desde la interfaz.
