@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "dev:demo": "DEMO_MODE=1 next dev",
+    "dev:demo": "cross-env DEMO_MODE=1 next dev",
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit"
@@ -23,6 +23,7 @@
     "@types/node": "^22.18.0",
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",
+    "cross-env": "^7.0.3",
     "typescript": "^5.9.3"
   }
 }
