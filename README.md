@@ -19,7 +19,12 @@ En el **modo demo** la barra lateral tiene un selector "Ver como" para recorrer 
 
 1. En Supabase → Authentication → URL Configuration, agrega la URL donde publiques la app (además de `http://localhost:3000`) a **Site URL** y **Redirect URLs**.
 2. Configura un **SMTP propio** (por ejemplo Resend) en Authentication → Emails. El correo incluido en Supabase solo permite unos cuantos envíos por hora y los enlaces mágicos dejarán de llegar.
-3. Para invitar a alguien: el admin lo registra en **Equipo** y le comparte el enlace de la app. Al entrar con ese correo, la invitación se acepta sola.
+3. **Plantillas de correo (obligatorio para que funcionen los enlaces):** en Authentication → Emails → Templates, cambia el enlace de **Magic Link** y de **Confirm signup** por:
+   ```html
+   <a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email">Entrar a Memoria</a>
+   ```
+   Así el enlace funciona aunque se abra en otro navegador o dispositivo, y sirve igual para entrar y para invitaciones.
+4. Para invitar a alguien: el admin lo registra en **Equipo** y la app le envía un correo con su enlace. Al entrar, la invitación se acepta sola.
 
 ## Pantallas
 
@@ -101,5 +106,4 @@ Corre las pruebas cada vez que cambies una política o un trigger.
 
 - **Sprint 3:** subir documentos y generar la minuta con IA (Storage + extracción).
 - Tarea programada que elimine definitivamente lo marcado como eliminado hace más de 30 días.
-- Correo de invitación automático (hoy se guarda la invitación y el admin comparte el enlace).
 - Vista de bitácora para el admin y restaurar registros eliminados desde la interfaz.

@@ -37,7 +37,7 @@ export function LoginForm({ linkError }: { linkError: boolean }) {
     return (
       <div className="auth-note" role="status">
         <p className="auth-note-title">Revisa tu correo</p>
-        <p>Te enviamos un enlace a <strong>{email}</strong>. Ábrelo en este mismo navegador para entrar.</p>
+        <p>Te enviamos un enlace a <strong>{email}</strong>. Ábrelo para entrar; si no lo ves, revisa spam.</p>
         <button className="btn-link" onClick={() => setSent(false)}>Usar otro correo</button>
       </div>
     )

@@ -117,7 +117,7 @@ function InviteDrawer({ open, onClose, demo }: { open: boolean; onClose: () => v
       footer={
         <>
           <button type="button" className="btn btn-ghost" onClick={onClose}>Cancelar</button>
-          <button type="submit" form="invite" className="btn btn-primary" disabled={pending}>Guardar invitación</button>
+          <button type="submit" form="invite" className="btn btn-primary" disabled={pending}>Enviar invitación</button>
         </>
       }
     >
@@ -148,7 +148,7 @@ function InviteDrawer({ open, onClose, demo }: { open: boolean; onClose: () => v
         <p className="note">
           {demo
             ? 'En el demo la invitación solo se guarda en la lista.'
-            : 'Todavía no se envía un correo automático: compártele el enlace de la app para que entre con este correo.'}
+            : 'Le llegará un correo con un enlace para entrar. Si no le llega en unos minutos, compártele el enlace de la app y que entre con este correo.'}
         </p>
         {error && <p className="form-error" role="alert">{error}</p>}
       </form>

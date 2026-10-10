@@ -1,6 +1,7 @@
 import 'server-only'
 import { cookies } from 'next/headers'
 import { createServerClient } from '@supabase/ssr'
+import { createClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database.types'
 import type { AppContext, ClientSummary, HistoryEntry, PendingRecord } from '../types'
 import type { Repo } from './repo'
@@ -23,6 +24,21 @@ export async function supabaseServer() {
       },
     },
   )
+}
+
+/**
+ * Envía a una persona invitada el correo con su enlace para entrar.
+ * Usa un cliente aparte (sin sesión ni cookies) para no tocar la sesión del admin.
+ * El enlace del correo apunta a /auth/confirm (plantilla configurada en Supabase),
+ * así que funciona aunque la persona lo abra en otro navegador o dispositivo.
+ */
+export async function sendAccessEmail(email: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+    auth: { persistSession: false, autoRefreshToken: false, flowType: 'implicit' },
+  })
+  const { error } = await sb.auth.signInWithOtp({ email, options: { shouldCreateUser: true } })
+  if (!error) return { ok: true }
+  return { ok: false, error: /rate|limit/i.test(error.message) ? 'se alcanzó el límite de correos por hora' : error.message }
 }
 
 function fail(error: { message: string } | null): asserts error is null {

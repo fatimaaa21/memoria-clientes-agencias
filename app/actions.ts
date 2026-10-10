@@ -5,6 +5,7 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { repo, isDemo } from '@/lib/data'
 import { DEMO_COOKIE } from '@/lib/data/demo'
+import { sendAccessEmail } from '@/lib/data/supabase'
 import type { ActionResult, HistoryEntry, RecordKind, Role } from '@/lib/types'
 
 function friendly(e: unknown): string {
@@ -113,7 +114,11 @@ export async function inviteMemberAction(form: FormData): Promise<ActionResult> 
       role: (form.get('role') as Role) ?? 'colaborador',
       full_name: clean(form.get('full_name')) ?? '',
     })
-    return `Invitación guardada para ${email}`
+    if (isDemo()) return `Invitación guardada para ${email}`
+    const sent = await sendAccessEmail(email)
+    return sent.ok
+      ? `Invitación enviada a ${email}`
+      : `Invitación guardada, pero el correo no salió (${sent.error}). Compártele el enlace de la app.`
   })
 }
 
