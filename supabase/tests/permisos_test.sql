@@ -29,6 +29,7 @@ declare
   m_admin uuid; m_ej uuid; m_ej2 uuid; m_col uuid; m_ext uuid;
   c1 uuid; c2 uuid; c3 uuid; c_nuevo uuid;
   r_int uuid; r_pub uuid; r_col uuid; r_c2 uuid;
+  p1 uuid; p2 uuid;
   v_status public.record_status;
   v_uuid uuid;
   n int;
@@ -259,6 +260,65 @@ begin
   if v_uuid = m_ej then rep := rep || E'\nOK    ejecutivo confirma lo del colaborador y queda registrado quién confirmó';
   else fallas := fallas + 1; rep := rep || E'\nFALLA confirmed_by incorrecto'; end if;
 
+  reset role;
+
+  -- =========================================================================
+  -- PROYECTOS (permisos por cliente)
+  -- =========================================================================
+  insert into public.projects (client_id, name) values (c2, 'Proyecto de C2') returning id into p2;
+
+  perform set_config('request.jwt.claims', json_build_object('sub', u_ej, 'role', 'authenticated', 'email', 'ej@a.mx')::text, true);
+  perform set_config('role', 'authenticated', true);
+  insert into public.projects (client_id, name) values (c1, 'Campaña de diciembre') returning id into p1;
+  total := total + 1;
+  if p1 is not null then rep := rep || E'\nOK    ejecutivo crea un proyecto en su cliente';
+  else fallas := fallas + 1; rep := rep || E'\nFALLA ejecutivo no pudo crear proyecto'; end if;
+
+  ok := false;
+  begin
+    insert into public.projects (client_id, name) values (c2, 'Proyecto ajeno');
+  exception when others then ok := true;
+  end;
+  total := total + 1;
+  if ok then rep := rep || E'\nOK    ejecutivo no puede crear proyectos en un cliente ajeno';
+  else fallas := fallas + 1; rep := rep || E'\nFALLA ejecutivo creó proyecto en cliente ajeno'; end if;
+
+  select count(*) into n from public.projects;
+  total := total + 1;
+  if n = 1 then rep := rep || E'\nOK    ejecutivo solo ve los proyectos de sus clientes';
+  else fallas := fallas + 1; rep := rep || E'\nFALLA ejecutivo ve ' || n || ' proyectos (esperado 1)'; end if;
+
+  ok := false;
+  begin
+    insert into public.records (client_id, project_id, kind, content) values (c1, p2, 'acuerdo', 'proyecto cruzado');
+  exception when others then ok := true;
+  end;
+  total := total + 1;
+  if ok then rep := rep || E'\nOK    un registro no puede usar el proyecto de otro cliente';
+  else fallas := fallas + 1; rep := rep || E'\nFALLA se aceptó un proyecto de otro cliente'; end if;
+  reset role;
+
+  perform set_config('request.jwt.claims', json_build_object('sub', u_col, 'role', 'authenticated', 'email', 'col@a.mx')::text, true);
+  perform set_config('role', 'authenticated', true);
+  select count(*) into n from public.projects where id = p1;
+  total := total + 1;
+  if n = 1 then rep := rep || E'\nOK    colaborador ve los proyectos de su cliente asignado';
+  else fallas := fallas + 1; rep := rep || E'\nFALLA colaborador no ve el proyecto'; end if;
+
+  insert into public.records (client_id, project_id, kind, content) values (c1, p1, 'pendiente', 'Textos de diciembre');
+  get diagnostics n = row_count;
+  total := total + 1;
+  if n = 1 then rep := rep || E'\nOK    colaborador registra dentro de un proyecto';
+  else fallas := fallas + 1; rep := rep || E'\nFALLA colaborador no pudo registrar en el proyecto'; end if;
+
+  ok := false;
+  begin
+    insert into public.projects (client_id, name) values (c1, 'Proyecto del colaborador');
+  exception when others then ok := true;
+  end;
+  total := total + 1;
+  if ok then rep := rep || E'\nOK    colaborador no puede crear proyectos';
+  else fallas := fallas + 1; rep := rep || E'\nFALLA colaborador creó un proyecto'; end if;
   reset role;
 
   -- =========================================================================

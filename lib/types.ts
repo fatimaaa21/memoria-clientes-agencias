@@ -10,6 +10,10 @@ export type Member = T['agency_members']['Row']
 export type Client = T['clients']['Row']
 export type ClientRecord = T['records']['Row']
 export type Invitation = T['agency_invitations']['Row']
+export type Project = T['projects']['Row']
+
+/** Proyecto con su cliente y conteos, para la barra lateral y listas. */
+export type ProjectSummary = Project & { client_name: string; record_count: number; pending_count: number }
 
 export type HistoryEntry = {
   id: number

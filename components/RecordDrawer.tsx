@@ -2,21 +2,22 @@
 
 import { useEffect, useState, useTransition } from 'react'
 import { Check, Trash2 } from 'lucide-react'
-import type { ClientRecord, HistoryEntry, Member } from '@/lib/types'
+import type { ClientRecord, HistoryEntry, Member, Project } from '@/lib/types'
 import { KIND_LABEL } from '@/lib/types'
 import { fmtDateTime, fmtDayLong, fmtDue } from '@/lib/format'
 import { Avatar, Drawer, KindTag, MemberSelect, StatusMarker, toast } from './ui'
 import { confirmRecordsAction, deleteRecordAction, getHistoryAction, updateRecordAction } from '@/app/actions'
 import type { Perms } from './ClientDossier'
+import { ProjectSelect } from './QuickRecordDrawer'
 
 const FIELD_LABEL: Record<string, string> = {
   content: 'Texto', kind: 'Tipo', status: 'Estado', responsible_member_id: 'Responsable',
-  due_date: 'Fecha', is_internal: 'Solo para el equipo', deleted_at: 'Eliminado',
+  due_date: 'Fecha', is_internal: 'Solo para el equipo', deleted_at: 'Eliminado', project_id: 'Proyecto',
 }
 
 export function RecordDrawer({
-  record, onClose, members, perms, clientName,
-}: { record: ClientRecord | null; onClose: () => void; members: Member[]; perms: Perms; clientName: string }) {
+  record, onClose, members, perms, clientName, projects,
+}: { record: ClientRecord | null; onClose: () => void; members: Member[]; perms: Perms; clientName: string; projects: Project[] }) {
   const [history, setHistory] = useState<HistoryEntry[]>([])
   const [editing, setEditing] = useState(false)
   const [error, setError] = useState('')
@@ -35,6 +36,7 @@ export function RecordDrawer({
   const confirmer = record.confirmed_by ? byId.get(record.confirmed_by) : null
   const resp = record.responsible_member_id ? byId.get(record.responsible_member_id) : null
   const due = record.due_date ? fmtDue(record.due_date) : null
+  const project = record.project_id ? projects.find((p) => p.id === record.project_id) : null
 
   const act = (fn: () => Promise<{ ok: boolean; message?: string; error?: string }>, close = false) =>
     start(async () => {
@@ -92,6 +94,14 @@ export function RecordDrawer({
             <span className="field-label">Qué quedó</span>
             <textarea className="input textarea" name="content" defaultValue={record.content} rows={5} required maxLength={4000} data-autofocus />
           </label>
+          {projects.length > 0 ? (
+            <label className="field">
+              <span className="field-label">Proyecto</span>
+              <ProjectSelect projects={projects} defaultValue={record.project_id} />
+            </label>
+          ) : (
+            <input type="hidden" name="project_id" value={record.project_id ?? ''} />
+          )}
           <div className="grid-2">
             <label className="field">
               <span className="field-label">Responsable</span>
@@ -114,6 +124,7 @@ export function RecordDrawer({
 
           <dl className="props props-stack">
             <div className="prop"><dt>Tipo</dt><dd><KindTag kind={record.kind} /></dd></div>
+            <div className="prop"><dt>Proyecto</dt><dd>{project ? project.name : <span className="muted">Todo el cliente</span>}</dd></div>
             <div className="prop">
               <dt>Estado</dt>
               <dd>

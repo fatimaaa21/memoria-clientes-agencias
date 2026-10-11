@@ -1,9 +1,10 @@
 import type {
-  AppContext, Client, ClientRecord, ClientSummary, HistoryEntry, Invitation, PendingRecord, RecordKind, Role,
+  AppContext, Client, ClientRecord, ClientSummary, HistoryEntry, Invitation, PendingRecord, Project, ProjectSummary, RecordKind, Role,
 } from '../types'
 
 export type NewRecordInput = {
   client_id: string
+  project_id: string | null
   kind: RecordKind
   content: string
   responsible_member_id: string | null
@@ -13,7 +14,7 @@ export type NewRecordInput = {
 }
 
 export type RecordPatch = Partial<Pick<ClientRecord,
-  'kind' | 'content' | 'responsible_member_id' | 'due_date' | 'is_internal'>>
+  'kind' | 'content' | 'responsible_member_id' | 'due_date' | 'is_internal' | 'project_id'>>
 
 /** Acceso a datos. Hay dos implementaciones: Supabase y demo en memoria. */
 export interface Repo {
@@ -27,10 +28,14 @@ export interface Repo {
   getHistory(recordId: string): Promise<HistoryEntry[]>
   listPending(): Promise<PendingRecord[]>
   listInvitations(): Promise<Invitation[]>
+  listProjects(): Promise<ProjectSummary[]>
+  getProject(id: string): Promise<Project | null>
 
   createAgency(name: string, fullName: string): Promise<void>
   acceptInvitations(): Promise<number>
   createClient(input: { name: string; owner_member_id: string | null; backup_member_id: string | null }): Promise<string>
+  createProject(input: { client_id: string; name: string }): Promise<string>
+  archiveProject(id: string): Promise<void>
   createRecord(input: NewRecordInput): Promise<void>
   updateRecord(id: string, patch: RecordPatch): Promise<void>
   confirmRecords(ids: string[]): Promise<number>

@@ -10,7 +10,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const ctx = await r.getContext()
   if (!ctx) redirect('/bienvenida')
 
-  const [clients, pending] = await Promise.all([r.listClients(), r.listPending()])
+  const [clients, pending, projects] = await Promise.all([r.listClients(), r.listPending(), r.listProjects()])
   const byId = new Map(clients.map((c) => [c.id, c]))
   const myPending = pending.filter((p) => {
     const c = byId.get(p.client_id)
@@ -19,7 +19,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="shell">
-      <Sidebar ctx={ctx} clients={clients} pendingCount={myPending} />
+      <Sidebar
+        ctx={ctx}
+        projects={projects}
+        manageableClients={clients.filter((c) => canManageClient(ctx.me, c))}
+        pendingCount={myPending}
+      />
       <div className="main">{children}</div>
       <Toaster />
     </div>

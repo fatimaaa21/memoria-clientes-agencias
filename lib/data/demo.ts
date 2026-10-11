@@ -1,7 +1,7 @@
 import 'server-only'
 import { cookies } from 'next/headers'
 import type {
-  Agency, Client, ClientRecord, ClientSummary, HistoryEntry, Invitation, Member, PendingRecord,
+  Agency, Client, ClientRecord, ClientSummary, HistoryEntry, Invitation, Member, PendingRecord, Project, ProjectSummary,
 } from '../types'
 import { canContributeClient, canManageClient, recordsStartConfirmed } from '../permissions'
 import type { Repo } from './repo'
@@ -19,6 +19,7 @@ type Store = {
   members: Member[]
   clients: Client[]
   assignments: { client_id: string; member_id: string }[]
+  projects: Project[]
   records: ClientRecord[]
   history: (HistoryEntry & { record_id: string })[]
   invitations: Invitation[]
@@ -73,13 +74,23 @@ function seed(): Store {
     { client_id: 'c-puerta', member_id: 'm-andres' },
     { client_id: 'c-lirio', member_id: 'm-tomas' },
   ]
+  const pr = (id: string, client_id: string, name: string, days: number): Project => ({
+    id, agency_id: agency.id, client_id, name, archived_at: null, created_by: 'm-diego', created_at: daysAgo(days),
+  })
+  const projects = [
+    pr('p-dic', 'c-cafe', 'Campaña de diciembre', 9),
+    pr('p-lluvias', 'c-cafe', 'Temporada de lluvias', 41),
+    pr('p-blanqueo', 'c-dental', 'Blanqueamiento octubre', 30),
+    pr('p-torre', 'c-puerta', 'Preventa Torre Norte', 20),
+    pr('p-rosca', 'c-espiga', 'Rosca de reyes 2027', 5),
+  ]
   let n = 0
   const r = (
     client_id: string, kind: ClientRecord['kind'], content: string, created: string, opts: Partial<ClientRecord> = {},
   ): ClientRecord => {
     const confirmed = (opts.status ?? 'confirmado') === 'confirmado'
     return {
-      id: `r-${++n}`, agency_id: agency.id, client_id, source_id: null, kind,
+      id: `r-${++n}`, agency_id: agency.id, client_id, project_id: null, source_id: null, kind,
       status: 'confirmado', content, responsible_member_id: null, due_date: null, is_internal: false,
       external_task_url: null, created_by: 'm-diego',
       confirmed_by: confirmed ? (opts.created_by ?? 'm-diego') : null,
@@ -93,22 +104,22 @@ function seed(): Store {
     r('c-cafe', 'consideracion', 'La dueña (Lucía) aprueba todo lo que se publica; el gerente no puede autorizar cambios.', daysAgo(96)),
     r('c-cafe', 'acuerdo', 'Paquete mensual: 12 publicaciones en Instagram y 4 reels. Presupuesto de pauta: $6,000 MXN al mes.', daysAgo(95)),
     r('c-cafe', 'consideracion', 'Paga a 45 días aunque el contrato dice 30. Facturar el día 1 para no atrasar la nómina.', daysAgo(80), { is_internal: true, created_by: 'm-mariana', confirmed_by: 'm-mariana' }),
-    r('c-cafe', 'acuerdo', 'La campaña de temporada de lluvias arranca el 15 de junio con el lanzamiento del café de olla frío.', daysAgo(41)),
+    r('c-cafe', 'acuerdo', 'La campaña de temporada de lluvias arranca el 15 de junio con el lanzamiento del café de olla frío.', daysAgo(41), { project_id: 'p-lluvias' }),
     r('c-cafe', 'consideracion', 'No mencionar precios en las publicaciones; cambian por sucursal.', daysAgo(41)),
-    r('c-cafe', 'pendiente', 'Mandar propuesta de 3 conceptos para la campaña de diciembre.', daysAgo(9), { responsible_member_id: 'm-andres', due_date: dayOnly(3) }),
-    r('c-cafe', 'acuerdo', 'Se sube a 4 publicaciones por semana durante noviembre y diciembre; el costo extra se cobra aparte.', daysAgo(9)),
-    r('c-cafe', 'pendiente', 'Agendar sesión de fotos en la sucursal Centro antes del 30.', daysAgo(9), { responsible_member_id: 'm-tomas', due_date: dayOnly(12) }),
+    r('c-cafe', 'pendiente', 'Mandar propuesta de 3 conceptos para la campaña de diciembre.', daysAgo(9), { project_id: 'p-dic', responsible_member_id: 'm-andres', due_date: dayOnly(3) }),
+    r('c-cafe', 'acuerdo', 'Se sube a 4 publicaciones por semana durante noviembre y diciembre; el costo extra se cobra aparte.', daysAgo(9), { project_id: 'p-dic' }),
+    r('c-cafe', 'pendiente', 'Agendar sesión de fotos en la sucursal Centro antes del 30.', daysAgo(9), { project_id: 'p-dic', responsible_member_id: 'm-tomas', due_date: dayOnly(12) }),
     r('c-cafe', 'acuerdo', 'Cambio de color en las historias: usar el verde olivo del empaque nuevo, no el café.', daysAgo(1, 16), { status: 'por_confirmar', created_by: 'm-valeria', confirmed_by: null, confirmed_at: null }),
-    r('c-cafe', 'pendiente', 'Lucía pidió ver los textos de diciembre antes del viernes.', daysAgo(0, 10), { status: 'por_confirmar', created_by: 'm-andres', confirmed_by: null, confirmed_at: null, due_date: dayOnly(2) }),
+    r('c-cafe', 'pendiente', 'Lucía pidió ver los textos de diciembre antes del viernes.', daysAgo(0, 10), { project_id: 'p-dic', status: 'por_confirmar', created_by: 'm-andres', confirmed_by: null, confirmed_at: null, due_date: dayOnly(2) }),
     // Clínica Dental
-    r('c-dental', 'acuerdo', 'Campaña de blanqueamiento con 20% de descuento durante octubre.', daysAgo(30)),
+    r('c-dental', 'acuerdo', 'Campaña de blanqueamiento con 20% de descuento durante octubre.', daysAgo(30), { project_id: 'p-blanqueo' }),
     r('c-dental', 'consideracion', 'Nunca mostrar fotos de pacientes reales sin su carta de consentimiento firmada.', daysAgo(60)),
     r('c-dental', 'pendiente', 'Actualizar horarios en Google Maps y en la web.', daysAgo(3), { responsible_member_id: 'm-valeria', due_date: dayOnly(-1), status: 'por_confirmar', created_by: 'm-valeria', confirmed_by: null, confirmed_at: null }),
     // Puerta Norte
-    r('c-puerta', 'acuerdo', 'Tres recorridos virtuales al mes para desarrollos en preventa.', daysAgo(20), { created_by: 'm-sofia', confirmed_by: 'm-sofia' }),
+    r('c-puerta', 'acuerdo', 'Tres recorridos virtuales al mes para desarrollos en preventa.', daysAgo(20), { project_id: 'p-torre', created_by: 'm-sofia', confirmed_by: 'm-sofia' }),
     r('c-puerta', 'consideracion', 'El área legal revisa cualquier texto que mencione plazos de entrega.', daysAgo(20), { created_by: 'm-sofia', confirmed_by: 'm-sofia' }),
     // La Espiga
-    r('c-espiga', 'acuerdo', 'Rosca de reyes: preventa en línea a partir del 15 de diciembre.', daysAgo(5), { created_by: 'm-sofia', confirmed_by: 'm-sofia' }),
+    r('c-espiga', 'acuerdo', 'Rosca de reyes: preventa en línea a partir del 15 de diciembre.', daysAgo(5), { project_id: 'p-rosca', created_by: 'm-sofia', confirmed_by: 'm-sofia' }),
     // Pulso
     r('c-pulso', 'pendiente', 'Enviar reporte de resultados de septiembre.', daysAgo(12), { responsible_member_id: 'm-diego', due_date: dayOnly(-4) }),
   ]
@@ -119,7 +130,7 @@ function seed(): Store {
       new_values: { content: records[2].content },
     },
   ]
-  return { agency, members, clients, assignments, records, history, invitations: [], seq: 1000 }
+  return { agency, members, clients, assignments, projects, records, history, invitations: [], seq: 1000 }
 }
 
 function store(): Store {
@@ -240,6 +251,54 @@ export const demoRepo: Repo = {
     return store().invitations.filter((i) => !i.accepted_at)
   },
 
+  async listProjects(): Promise<ProjectSummary[]> {
+    const s = store()
+    const me = await currentMember()
+    const recs = visibleRecords(me, s)
+    return s.projects
+      .filter((p) => {
+        const c = s.clients.find((x) => x.id === p.client_id)!
+        return !p.archived_at && !c.archived_at && canView(me, c, s)
+      })
+      .sort((a, b) => b.created_at.localeCompare(a.created_at))
+      .map((p) => {
+        const mine = recs.filter((r) => r.project_id === p.id)
+        return {
+          ...p,
+          client_name: s.clients.find((c) => c.id === p.client_id)!.name,
+          record_count: mine.length,
+          pending_count: mine.filter((r) => r.status === 'por_confirmar').length,
+        }
+      })
+  },
+
+  async getProject(id) {
+    const s = store()
+    const me = await currentMember()
+    const p = s.projects.find((x) => x.id === id)
+    const c = p && s.clients.find((x) => x.id === p.client_id)
+    return p && c && canView(me, c, s) ? p : null
+  },
+
+  async createProject(input) {
+    const s = store()
+    const me = await currentMember()
+    const client = s.clients.find((c) => c.id === input.client_id)
+    if (!client || !canManageClient(me, client)) throw new Error('No tienes permiso para crear proyectos en este cliente')
+    const id = `p-${++s.seq}`
+    s.projects.push({ id, agency_id: s.agency.id, client_id: client.id, name: input.name, archived_at: null, created_by: me.id, created_at: now() })
+    return id
+  },
+
+  async archiveProject(id) {
+    const s = store()
+    const me = await currentMember()
+    const p = s.projects.find((x) => x.id === id)
+    const client = p && s.clients.find((c) => c.id === p.client_id)
+    if (!p || !client || !canManageClient(me, client)) throw new Error('No tienes permiso para archivar este proyecto')
+    p.archived_at = now()
+  },
+
   async createAgency() {
     throw new Error('En el modo demo la agencia ya existe')
   },
@@ -267,6 +326,9 @@ export const demoRepo: Repo = {
     const client = s.clients.find((c) => c.id === input.client_id)
     if (!client || !canContributeClient(me, client, assigned(s, client.id))) {
       throw new Error('No tienes permiso para registrar información en este cliente')
+    }
+    if (input.project_id && !s.projects.some((p) => p.id === input.project_id && p.client_id === client.id)) {
+      throw new Error('El proyecto no pertenece a este cliente')
     }
     const isConfirmed = confirmed && recordsStartConfirmed(me)
     s.records.push({

@@ -8,12 +8,14 @@ export default async function ExpedientePage({ params }: { params: Promise<{ id:
   const r = repo()
   const [ctx, client] = await Promise.all([r.getContext(), r.getClient(id)])
   if (!ctx || !client) notFound()
-  const [records, assigned] = await Promise.all([r.listRecords(id), r.listAssignments(id)])
+  const [records, assigned, allProjects] = await Promise.all([r.listRecords(id), r.listAssignments(id), r.listProjects()])
+  const projects = allProjects.filter((p) => p.client_id === id)
 
   return (
     <ClientDossier
       client={client}
       records={records}
+      projects={projects}
       assigned={assigned}
       members={ctx.members}
       me={ctx.me}

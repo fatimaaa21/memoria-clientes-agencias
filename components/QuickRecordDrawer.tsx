@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import type { Client, Member, RecordKind } from '@/lib/types'
+import type { Client, Member, Project, RecordKind } from '@/lib/types'
 import { recordsStartConfirmed } from '@/lib/permissions'
 import { Drawer, MemberSelect, toast } from './ui'
 import { createRecordAction } from '@/app/actions'
@@ -13,8 +13,11 @@ const KINDS: { value: RecordKind; label: string; hint: string; placeholder: stri
 ]
 
 export function QuickRecordDrawer({
-  open, onClose, client, members, me, owner,
-}: { open: boolean; onClose: () => void; client: Client; members: Member[]; me: Member; owner: Member | null }) {
+  open, onClose, client, members, me, owner, projects, defaultProjectId,
+}: {
+  open: boolean; onClose: () => void; client: Client; members: Member[]; me: Member; owner: Member | null
+  projects: Project[]; defaultProjectId: string | null
+}) {
   const [kind, setKind] = useState<RecordKind>('acuerdo')
   const [error, setError] = useState('')
   const [pending, start] = useTransition()
@@ -70,6 +73,13 @@ export function QuickRecordDrawer({
             placeholder={current.placeholder} data-autofocus />
         </label>
 
+        {projects.length > 0 && (
+          <label className="field">
+            <span className="field-label">Proyecto</span>
+            <ProjectSelect projects={projects} defaultValue={defaultProjectId} key={`${open}-${defaultProjectId}`} />
+          </label>
+        )}
+
         <div className="grid-2">
           <label className="field">
             <span className="field-label">Responsable</span>
@@ -106,5 +116,14 @@ export function QuickRecordDrawer({
         {error && <p className="form-error" role="alert">{error}</p>}
       </form>
     </Drawer>
+  )
+}
+
+export function ProjectSelect({ projects, defaultValue }: { projects: Project[]; defaultValue: string | null }) {
+  return (
+    <select className="input" name="project_id" defaultValue={defaultValue ?? ''}>
+      <option value="">Sin proyecto (aplica a todo el cliente)</option>
+      {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+    </select>
   )
 }

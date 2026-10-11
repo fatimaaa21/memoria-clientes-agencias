@@ -2,16 +2,16 @@
 
 import Link from 'next/link'
 import { useMemo, useState, useTransition } from 'react'
-import { Check } from 'lucide-react'
-import type { Member, PendingRecord } from '@/lib/types'
+import { Check, FolderOpen } from 'lucide-react'
+import type { Member, PendingRecord, Project } from '@/lib/types'
 import { relative, swatch } from '@/lib/format'
 import { Avatar, KindTag, StatusMarker, toast } from './ui'
 import { RecordDrawer } from './RecordDrawer'
 import { confirmRecordsAction } from '@/app/actions'
 
 export function PendingQueue({
-  records, members, admin, canConfirm,
-}: { records: PendingRecord[]; members: Member[]; admin: boolean; canConfirm: boolean }) {
+  records, projects, members, admin, canConfirm,
+}: { records: PendingRecord[]; projects: Project[]; members: Member[]; admin: boolean; canConfirm: boolean }) {
   const [sel, setSel] = useState<string[]>([])
   const [openId, setOpenId] = useState<string | null>(null)
   const [pending, start] = useTransition()
@@ -76,6 +76,7 @@ export function PendingQueue({
                 <ul>
                   {items.map((r) => {
                     const author = r.created_by ? byId.get(r.created_by) : null
+                    const proj = r.project_id ? projects.find((p) => p.id === r.project_id) : null
                     return (
                       <li key={r.id} className="queue-row">
                         <input type="checkbox" aria-label="Seleccionar" checked={sel.includes(r.id)} onChange={() => toggle(r.id)} />
@@ -85,6 +86,7 @@ export function PendingQueue({
                             <span className="tl-text">{r.content}</span>
                             <span className="tl-meta">
                               <KindTag kind={r.kind} />
+                              {proj && <span className="meta-project"><FolderOpen size={12} aria-hidden /> {proj.name}</span>}
                               {author && <span className="meta-person"><Avatar member={author} size={18} /> Registró {author.full_name}</span>}
                               <span className="muted">{relative(r.created_at)}</span>
                             </span>
@@ -104,6 +106,7 @@ export function PendingQueue({
       <RecordDrawer
         record={open} onClose={() => setOpenId(null)} members={members}
         perms={{ manage: true, contribute: true, admin }} clientName={open?.client_name ?? ''}
+        projects={open ? projects.filter((p) => p.client_id === open.client_id) : []}
       />
     </div>
   )

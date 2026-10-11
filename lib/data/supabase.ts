@@ -3,7 +3,7 @@ import { cookies } from 'next/headers'
 import { createServerClient } from '@supabase/ssr'
 import { createClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database.types'
-import type { AppContext, ClientSummary, HistoryEntry, PendingRecord } from '../types'
+import type { AppContext, ClientSummary, HistoryEntry, PendingRecord, ProjectSummary } from '../types'
 import type { Repo } from './repo'
 
 export async function supabaseServer() {
@@ -155,6 +155,51 @@ export const supabaseRepo: Repo = {
       .order('created_at', { ascending: false })
     fail(error)
     return data ?? []
+  },
+
+  async listProjects(): Promise<ProjectSummary[]> {
+    const sb = await supabaseServer()
+    const [{ data: projects, error: e1 }, { data: recs, error: e2 }] = await Promise.all([
+      sb.from('projects').select('*, clients(name, archived_at)').is('archived_at', null).order('created_at', { ascending: false }),
+      sb.from('records').select('project_id,status').not('project_id', 'is', null).is('deleted_at', null),
+    ])
+    fail(e1)
+    fail(e2)
+    return (projects ?? [])
+      .filter((p) => p.clients && !p.clients.archived_at)
+      .map(({ clients, ...p }) => {
+        const mine = (recs ?? []).filter((r) => r.project_id === p.id)
+        return {
+          ...p,
+          client_name: clients?.name ?? '',
+          record_count: mine.length,
+          pending_count: mine.filter((r) => r.status === 'por_confirmar').length,
+        }
+      })
+  },
+
+  async getProject(id) {
+    const sb = await supabaseServer()
+    const { data, error } = await sb.from('projects').select('*').eq('id', id).maybeSingle()
+    fail(error)
+    return data
+  },
+
+  async createProject(input) {
+    const sb = await supabaseServer()
+    const { data, error } = await sb.from('projects').insert(input).select('id').single()
+    fail(error)
+    return data!.id
+  },
+
+  async archiveProject(id) {
+    const sb = await supabaseServer()
+    const { error, count } = await sb
+      .from('projects')
+      .update({ archived_at: new Date().toISOString() }, { count: 'exact' })
+      .eq('id', id)
+    fail(error)
+    if (count === 0) throw new Error('No tienes permiso para archivar este proyecto')
   },
 
   async createAgency(name, fullName) {

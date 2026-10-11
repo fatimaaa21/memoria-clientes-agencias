@@ -34,6 +34,7 @@ En el **modo demo** la barra lateral tiene un selector "Ver como" para recorrer 
 | `/bienvenida` | Primera vez: acepta invitaciones pendientes o crea la agencia. |
 | `/clientes` | Lista de clientes visibles; nuevo cliente en panel lateral. |
 | `/clientes/[id]` | Expediente: consideraciones vigentes arriba, línea de tiempo filtrable, registro rápido, detalle con confirmar/editar/historial y equipo del cliente. |
+| `/proyectos/[id]` | Proyecto de un cliente: consideraciones del cliente arriba y solo los registros del proyecto. Se crean con el "+" de la barra lateral o desde el expediente. |
 | `/por-confirmar` | Cola del ejecutivo: todo lo que debe validar de sus clientes, con confirmación en lote. |
 | `/equipo` | Personas y roles; el admin invita y quita o devuelve el acceso. |
 
@@ -51,7 +52,7 @@ Minimalista tipo documento, definido en `app/globals.css` con variables CSS (mod
 | Carpeta | Contenido |
 | --- | --- |
 | `supabase/migrations/` | Esquema, funciones de permisos, triggers y políticas RLS. Ya aplicadas en el proyecto de Supabase `memoria-clientes-agencias` (`hmtjxixoqwxvxuuegzyp`). |
-| `supabase/tests/permisos_test.sql` | 37 pruebas que verifican la matriz de permisos con usuarios simulados. |
+| `supabase/tests/permisos_test.sql` | 44 pruebas que verifican la matriz de permisos con usuarios simulados. |
 | `types/database.types.ts` | Tipos de TypeScript generados desde la base. |
 | `app/`, `components/` | Interfaz en Next.js 15 (App Router, Server Actions). |
 | `lib/data/` | Acceso a datos: `supabase.ts` (real) y `demo.ts` (datos de ejemplo en memoria). |
@@ -63,6 +64,7 @@ Minimalista tipo documento, definido en `app/globals.css` con variables CSS (mod
 agencies ─┬─ agency_members (usuario + rol)
           ├─ agency_invitations
           └─ clients ─┬─ client_assignments (colaboradores y externos)
+                      ├─ projects (campañas; opcional en cada registro)
                       ├─ sources (reunión, documento, texto, audio)
                       └─ records (acuerdo | consideración | pendiente)
                              └─ record_history
@@ -98,7 +100,7 @@ await supabase.rpc('accept_invitations')
 
 1. Abre el **SQL Editor** del proyecto en Supabase.
 2. Pega el contenido de `supabase/tests/permisos_test.sql` y ejecútalo.
-3. El resultado aparece como un error intencional: `RESULTADO: 37 de 37 pruebas pasaron`, con la lista de cada prueba. El error deshace todos los datos de prueba, así que no queda nada en la base.
+3. El resultado aparece como un error intencional: `RESULTADO: 44 de 44 pruebas pasaron`, con la lista de cada prueba. El error deshace todos los datos de prueba, así que no queda nada en la base.
 
 Corre las pruebas cada vez que cambies una política o un trigger.
 

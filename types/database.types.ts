@@ -293,6 +293,58 @@ export type Database = {
           },
         ]
       }
+      projects: {
+        Row: {
+          agency_id: string
+          archived_at: string | null
+          client_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          agency_id?: string
+          archived_at?: string | null
+          client_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          agency_id?: string
+          archived_at?: string | null
+          client_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projects_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "agency_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       record_history: {
         Row: {
           agency_id: string
@@ -371,6 +423,7 @@ export type Database = {
           id: string
           is_internal: boolean
           kind: Database["public"]["Enums"]["record_kind"]
+          project_id: string | null
           responsible_member_id: string | null
           source_id: string | null
           status: Database["public"]["Enums"]["record_status"]
@@ -391,6 +444,7 @@ export type Database = {
           id?: string
           is_internal?: boolean
           kind: Database["public"]["Enums"]["record_kind"]
+          project_id?: string | null
           responsible_member_id?: string | null
           source_id?: string | null
           status?: Database["public"]["Enums"]["record_status"]
@@ -411,6 +465,7 @@ export type Database = {
           id?: string
           is_internal?: boolean
           kind?: Database["public"]["Enums"]["record_kind"]
+          project_id?: string | null
           responsible_member_id?: string | null
           source_id?: string | null
           status?: Database["public"]["Enums"]["record_status"]
@@ -450,6 +505,13 @@ export type Database = {
             columns: ["deleted_by"]
             isOneToOne: false
             referencedRelation: "agency_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "records_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
             referencedColumns: ["id"]
           },
           {

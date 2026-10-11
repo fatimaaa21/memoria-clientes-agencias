@@ -44,12 +44,34 @@ export async function createClientAction(form: FormData): Promise<ActionResult &
   }
 }
 
+export async function createProjectAction(form: FormData): Promise<ActionResult & { id?: string }> {
+  const name = clean(form.get('name'))
+  const client_id = clean(form.get('client_id'))
+  if (!name) return { ok: false, error: 'Escribe el nombre del proyecto.' }
+  if (!client_id) return { ok: false, error: 'Elige el cliente del proyecto.' }
+  try {
+    const id = await repo().createProject({ client_id, name })
+    revalidatePath('/', 'layout')
+    return { ok: true, id, message: 'Proyecto creado' }
+  } catch (e) {
+    return { ok: false, error: friendly(e) }
+  }
+}
+
+export async function archiveProjectAction(id: string): Promise<ActionResult> {
+  return run(async () => {
+    await repo().archiveProject(id)
+    return 'Proyecto archivado'
+  })
+}
+
 export async function createRecordAction(form: FormData): Promise<ActionResult> {
   const content = clean(form.get('content'))
   if (!content) return { ok: false, error: 'Escribe qué se acordó.' }
   return run(async () => {
     await repo().createRecord({
       client_id: String(form.get('client_id')),
+      project_id: clean(form.get('project_id')),
       kind: (form.get('kind') as RecordKind) ?? 'acuerdo',
       content,
       responsible_member_id: clean(form.get('responsible')),
@@ -71,6 +93,7 @@ export async function updateRecordAction(id: string, form: FormData): Promise<Ac
       responsible_member_id: clean(form.get('responsible')),
       due_date: clean(form.get('due_date')),
       is_internal: form.get('is_internal') === 'on',
+      project_id: clean(form.get('project_id')),
     })
     return 'Cambios guardados'
   })
