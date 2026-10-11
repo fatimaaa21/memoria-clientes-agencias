@@ -1,4 +1,4 @@
-import '@fontsource-variable/instrument-sans'
+import '@fontsource-variable/dm-sans'
 import './globals.css'
 import type { Metadata } from 'next'
 

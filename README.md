@@ -44,7 +44,7 @@ Minimalista tipo documento, definido en `app/globals.css` con variables CSS (mod
 - **Color solo con significado:** azul = acuerdo, ámbar = consideración, violeta = pendiente.
 - **Estado por forma, no solo por color:** marca llena = confirmado; anillo punteado = por confirmar.
 - **Paneles laterales** para acciones cortas; páginas completas para leer (el expediente).
-- Tipografía: Instrument Sans (incluida en el paquete, sin depender de Google Fonts).
+- Tipografía: DM Sans (incluida en el paquete, sin depender de Google Fonts).
 
 ## Qué incluye
 

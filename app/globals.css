@@ -49,7 +49,7 @@
   --moss: #e3e8d4;   --moss-ink: #56632a;
 
   /* Tipografía */
-  --font: 'Instrument Sans Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font: 'DM Sans Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
   --fs-xs: 12px;
   --fs-sm: 13px;
   --fs-base: 14px;
@@ -63,7 +63,7 @@
   --r-lg: 12px;
   --sidebar-w: 248px;
   --drawer-w: 480px;
-  --content-w: 900px;
+  --content-w: 1160px;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -131,7 +131,7 @@ ul, ol { list-style: none; margin: 0; padding: 0; }
 /* ---------------------------------------------------------------------------- */
 .shell { display: grid; grid-template-columns: var(--sidebar-w) 1fr; min-height: 100vh; }
 .main { min-width: 0; }
-.page { max-width: var(--content-w); margin: 0 auto; padding: 48px 48px 96px; }
+.page { max-width: var(--content-w); padding: 32px 40px 96px; }
 .page-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; margin-bottom: 28px; }
 .page-title { font-size: var(--fs-title); font-weight: 620; letter-spacing: -0.02em; line-height: 1.15; }
 .page-sub { color: var(--muted); margin-top: 6px; max-width: 60ch; }
